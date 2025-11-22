@@ -1,0 +1,8 @@
+#pragma once
+#include <cstdint>
+
+// Defining out base type
+using WORD = int32_t;   // Signed 4 Bytes
+using UWORD = uint32_t; // Unsigned 4 Bytes
+using ADDR = UWORD;     // Address type
+using BYTE = uint8_t;  // Unsigned 1 Byte

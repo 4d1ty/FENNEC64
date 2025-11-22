@@ -24,7 +24,7 @@ int main(int argc, char const *argv[])
 {
     if (argc < 2)
     {
-        std::cerr << "Usage: vm <bytecode.bin>" << std::endl;
+        std::cerr << "Usage: vixen <code.bin>" << std::endl;
         return 1;
     }
     program = load_bytecode(argv[1]);

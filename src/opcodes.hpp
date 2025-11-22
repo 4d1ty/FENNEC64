@@ -1,10 +1,12 @@
 #pragma once
 #include <unordered_map>
+#include "types.hpp"
+
 
 struct InstrInfo
 {
-    int opcode;
-    int operands;
+    int32_t opcode;
+    UWORD operands;
     bool has_mode;
 };
 
