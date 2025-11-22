@@ -6,8 +6,8 @@
 
 #define CODE_FRACTION 8  // 1/8 of Memory
 #define DATA_FRACTION 8  // 1/8 of Memory
-#define HEAP_FRACTION 2  // 1/2 of Memory
-#define STACK_FRACTION 4 // 1/4 of Memory
+#define HEAP_FRACTION 2  // 1/2 of Memory [RUNTIME]
+#define STACK_FRACTION 4 // 1/4 of Memory [RUNTIME]
 
 constexpr UWORD code_size = MEMORY_SIZE / CODE_FRACTION;
 constexpr UWORD data_size = MEMORY_SIZE / DATA_FRACTION;
@@ -29,10 +29,10 @@ constexpr UWORD STACK_END = MEMORY_SIZE;
 
 WORD memory[MEMORY_SIZE] = {0};
 
-UWORD hp = HEAP_END;          // Heap Pointer
-UWORD sp = STACK_START;       // Stack Pointer
-UWORD data_base = DATA_START; // Starting of the data segment
-UWORD dp = data_base;         // Data Pointer
+ADDR hp = HEAP_END;          // Heap Pointer
+ADDR sp = STACK_START;       // Stack Pointer
+ADDR data_base = DATA_START; // Starting of the data segment
+ADDR dp = data_base;         // Data Pointer
 
 WORD fetch_word(ADDR address)
 {
@@ -41,4 +41,11 @@ WORD fetch_word(ADDR address)
         throw std::out_of_range("Memory access out of bounds");
     }
     return memory[address];
+}
+
+WORD read_word_from_file(std::ifstream &infile)
+{
+    WORD value = 0;
+    infile.read(reinterpret_cast<char *>(&value), sizeof(WORD));
+    return value;
 }

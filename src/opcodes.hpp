@@ -1,16 +1,9 @@
 #pragma once
 #include <unordered_map>
+#include "cpu.hpp"
 #include "types.hpp"
 
-
-struct InstrInfo
-{
-    int32_t opcode;
-    UWORD operands;
-    bool has_mode;
-};
-
-enum InstructionSet
+enum InstructionSet : UWORD
 {
     PSH,
     POP,
@@ -20,33 +13,15 @@ enum InstructionSet
     HLT
 };
 
-enum Registers
+struct InstrInfo
 {
-    RA,
-    RB,
-    RC,
-    RD,
-    REG_COUNT,
+    InstructionSet opcode;
+    UWORD min_operands = 0;
+    UWORD max_operands = 1;
 };
 
 enum Section
 {
     TEXT,
     DATA,
-};
-
-std::unordered_map<std::string, InstrInfo> instr_map = {
-    {"PSH", {PSH, 1, true}},
-    {"POP", {POP, 1, false}},
-    {"ADD", {ADD, 2, true}},
-    {"OUT", {OUT, 1, true}},
-    {"LOAD", {LOAD, 2, true}},
-    {"HLT", {HLT, 0, false}}
-
-};
-std::unordered_map<std::string, int> register_map = {
-    {"RA", RA},
-    {"RB", RB},
-    {"RC", RC},
-    {"RD", RD},
 };

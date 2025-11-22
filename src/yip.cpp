@@ -5,31 +5,9 @@
 #include <vector>
 #include <cstdint>
 #include <iomanip>
-#include "opcodes.hpp"
 #include "memory.hpp"
+#include "mapping.hpp"
 #include "utils.hpp"
-
-bool is_register(const std::string &s, const std::unordered_map<std::string, int> &reg_map)
-{
-    auto it = reg_map.find(s);
-    if (it != reg_map.end())
-    {
-        return true;
-    }
-    return false;
-}
-
-bool is_memory(const std::string &s, const std::unordered_map<std::string, ADDR> &data_map)
-{
-    auto it = data_map.find(s);
-    if (it != data_map.end())
-    {
-
-        return true;
-    }
-    return false;
-}
-
 
 int main(int argc, char const *argv[])
 {
@@ -93,11 +71,14 @@ int main(int argc, char const *argv[])
         if (currentSection == TEXT)
         {
             // Handeling the text section
+
+            // Remove the comments
             auto comment_position = line.find(";");
             if (comment_position != std::string::npos)
             {
                 line = line.substr(0, comment_position);
             }
+
             std::istringstream iss(line);
             std::vector<std::string> tokens;
             std::string token;
@@ -106,60 +87,91 @@ int main(int argc, char const *argv[])
                 tokens.push_back(token);
             }
 
+            // Skip empty lines (whitespace only or comments)
+            if (tokens.empty())
+                continue;
+
             // Doing the actual thing
             std::string instr = tokens.at(0);
-            auto info = instr_map.find(instr);
-            int32_t mode;
-            std::vector<int32_t> ops;
-            if (tokens.size() - 1 > static_cast<size_t>(info->second.operands))
-            {
-                std::cerr << "Error: Too many operands for instruction " << instr << " at line " << line_no << std::endl;
-                return -1;
-            }
-            if (info == instr_map.end())
+            auto instr_info = instr_map.find(instr);
+
+            if (instr_info == instr_map.end())
             {
                 std::cerr << "Error: Unknown instruction " << instr << " at line " << line_no << std::endl;
                 return -1;
             }
-            if (info->second.has_mode)
+
+            tokens.erase(tokens.begin());
+            std::vector<OperandType> ops_t;
+            std::vector<WORD> ops;
+            // Number of operands check
+            if (tokens.size() < static_cast<size_t>(instr_info->second.min_operands) ||
+                tokens.size() > static_cast<size_t>(instr_info->second.max_operands))
             {
-                if (tokens.size() == 1)
+                std::cerr << "Error: Incorrect number of operands for instruction " << instr << " at line " << line_no << std::endl;
+                return -1;
+            }
+
+            // Handling no operand case
+            if (tokens.size() == OperandType::NONE)
+            {
+                ops_t.push_back(NONE);
+            }
+            else
+            {
+
+                for (auto &op_str : tokens)
                 {
-                    mode = 0; // Default mode
-                }
-                else
-                {
-                    std::string op = tokens.at(1);
-                    if (is_register(op, register_map))
+                    if (is_register(op_str, register_map))
                     {
-                        mode = 1; // Register mode
-                        ops.push_back(register_map[op]);
+                        ops_t.push_back(REGISTER);
+                        ops.push_back(register_map[op_str]);
                     }
-                    else if (is_number(op))
+                    else if (is_immediate(op_str))
                     {
-                        mode = 2; // Immediate mode
-                        ops.push_back(std::stoi(op));
+                        ops_t.push_back(INDIRECT);
+                        ops.push_back(static_cast<WORD>(std::stoi(op_str)));
                     }
-                    else if (is_memory(op, data_segments))
+                    else if (is_memory(op_str, data_segments))
                     {
-                        mode = 3; // Memory mode
-                        ops.push_back(data_segments.find(op)->second);
+                        ops_t.push_back(MEMORY);
+                        // Extract content between brackets
+                        std::string inner = op_str.substr(1, op_str.size() - 2);
+                        
+                        // Check if it's a labeled address
+                        auto it = data_segments.find(inner);
+                        if (it != data_segments.end())
+                        {
+                            ops.push_back(it->second);
+                        }
+                        // Otherwise it's a direct numeric address
+                        else if (is_number(inner))
+                        {
+                            ops.push_back(static_cast<WORD>(std::stoi(inner)));
+                        }
+                        else
+                        {
+                            std::cerr << "Error: Invalid memory reference " << op_str << " at line " << line_no << std::endl;
+                            return -1;
+                        }
                     }
                     else
                     {
-                        std::cerr << "Error: Invalid operand " << op << " at line " << line_no << std::endl;
+                        std::cerr << "Error: Invalid operand " << op_str << " at line " << line_no << std::endl;
                         return -1;
                     }
                 }
             }
-            bytecode.push_back(info->second.opcode);
-            if (info->second.has_mode)
-            {
-                bytecode.push_back(mode);
+
+            bytecode.push_back(instr_info->second.opcode); // Push the Instruction
+            if(ops_t.at(0) == NONE){
+                bytecode.push_back(NONE);
+
             }
-            for (auto &op : ops)
+            for (size_t idx = 0; idx < ops.size(); ++idx)
             {
-                bytecode.push_back(op);
+                bytecode.push_back(ops_t.at(idx));
+                bytecode.push_back(ops.at(idx));
             }
             // std::cout << line << std::endl;
         }
@@ -176,23 +188,20 @@ int main(int argc, char const *argv[])
     // First write the bytecode size and segment then the data size and segment
     WORD code_size = static_cast<WORD>(bytecode.size());
     // print the bytecode
-    std::cout << "Code size: " << std::hex << std::setfill('0') << std::setw(sizeof(WORD)*2) << code_size << " words" << std::endl;
     outputFile.write(reinterpret_cast<const char *>(&code_size), sizeof(code_size));
     for (int byte : bytecode)
     {
         WORD v = byte;
-        std::cout << std::hex << std::setfill('0') << std::setw(sizeof(WORD)) << v << " ";
         outputFile.write(reinterpret_cast<const char *>(&v), sizeof(v));
     }
 
     WORD data_size = static_cast<WORD>(data_segments.size());
     outputFile.write(reinterpret_cast<const char *>(&data_size), sizeof(data_size));
-    
+
     // I am stupid, the unordered_map does not guarantee order, so we need to write the data segments in the order they were defined
-    for(ADDR addr = DATA_START; addr < dp; addr++)
+    for (ADDR addr = DATA_START; addr < dp; addr++) // a good'ol for loop
     {
         WORD v = memory[addr];
-        std::cout << std::hex << std::setfill('0') << std::setw(sizeof(WORD)) << v << " ";
         outputFile.write(reinterpret_cast<const char *>(&v), sizeof(v));
     }
 
@@ -202,5 +211,12 @@ int main(int argc, char const *argv[])
 
     outputFile.close();
     std::cout << "Binary bytecode written to " << argv[2] << std::endl;
+
+    // DEBUG
+    // for (auto &v : bytecode)
+    // {
+    //     std::cout << std::setw(4) << v << " ";
+    // }
+
     return 0;
 }

@@ -3,22 +3,32 @@
 #include <cstdint>
 #include <fstream>
 #include "opcodes.hpp"
+#include "mapping.hpp"
+#include "memory.hpp"
+#include "cpu.hpp"
 
 int fetch();
 void eval(int);
-std::vector<int32_t> load_bytecode(const std::string &);
+void load_into_memory(const std::string &filename, WORD *memory);
+void set_value(OperandType mode, WORD operand, WORD value);
+WORD get_value(OperandType mode, WORD operand);
 
-int32_t stack[256];
-int32_t sp = -1;
+std::vector<WORD> get_words_from_memory(ADDR start = 0, ADDR end = MEMORY_SIZE, WORD memory_table[] = memory)
+{
+    std::vector<WORD> words;
+    for (ADDR ptr = start; ptr < end; ++ptr)
+    {
+        words.push_back(memory_table[ptr]);
+    }
+    return words;
+}
 
-int registers[REG_COUNT] = {0};
-int memory[256] = {0};
+UWORD ip = CODE_START;
 
-int32_t ip = 0;
-
-std::vector<int32_t> program;
+std::vector<WORD> program;
 
 bool running = true;
+bool debug = false;
 
 int main(int argc, char const *argv[])
 {
@@ -27,127 +37,190 @@ int main(int argc, char const *argv[])
         std::cerr << "Usage: vixen <code.bin>" << std::endl;
         return 1;
     }
-    program = load_bytecode(argv[1]);
-    std::cout << sizeof(program) << std::endl;
-
-    // Debug: Print loaded bytecode, print the pure binary
-    std::cout << "Loaded bytecode:" << std::endl;
-    int i = 0;
-    for (i = 0; i < program.size(); ++i)
+    if (argc > 2)
     {
-        std::cout << i << ": " << program[i] << std::endl;
+        if (std::string(argv[2]) == "-d")
+        {
+            debug = true;
+        }
     }
-    std::cout <<  "I" << i << std::endl;
+
+    load_into_memory(argv[1], memory);
+    program = get_words_from_memory(CODE_START, CODE_END, memory);
 
     while (running)
     {
         eval(fetch());
     }
-    std::cout << stack[--sp] << std::endl;
     return 0;
 }
 
-int fetch()
+WORD fetch()
 {
-    if (ip >= program.size())
+    if (ip >= static_cast<UWORD>(program.size()))
     {
         return HLT;
     }
     return program[ip++];
 }
 
-std::vector<int32_t> load_bytecode(const std::string &filename)
-{
-    std::ifstream infile(filename, std::ios::binary);
-    if (!infile)
-    {
-        std::cerr << "Failed to open bytecode file: " << filename << std::endl;
-        return {};
-    }
-
-    std::vector<int32_t> bytecode;
-    int32_t value;
-    while (infile.read(reinterpret_cast<char *>(&value), sizeof(value)))
-    {
-        bytecode.push_back(value);
-    }
-    infile.close();
-    return bytecode;
-}
+// Mode 0: top of the stack
+// Mode 1: from the registor
+// Mode 2: Immediate
+// Mode 3: Memory
 
 void eval(int instruction)
 {
     switch (instruction)
     {
     case HLT:
-        running = false;
-        break;
-    case PSH:
     {
 
-        int mode = fetch();
-        int dest = fetch();
-        int value;
-        switch (mode)
+        if (debug)
         {
-        case 0:
-            std::cerr << "Invalid Mode";
-            break;
-        case 1:
-            value = registers[dest];
-            break;
-        case 2:
-            value = dest;
-            break;
-        case 3:
-            value = memory[dest];
-            break;
-        default:
-            break;
+            std::cout << "HLT encountered\nFinal stack: [";
+            for (ADDR hsp = STACK_START+1; hsp <= sp; hsp++) // hsp: halt stack pointer
+            {
+                std::cout << memory[hsp];
+                if (hsp != sp)
+                {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]\nRegisters: RA=" << registers[RA] << " RB=" << registers[RB]
+                      << " RC=" << registers[RC] << " RD=" << registers[RD];
+            std::cout << "\nIP=" << ip << std::endl;
         }
-        stack[++sp] = value;
+        else
+        {
+            std::cout << "Yip! Program complete.\n";
+            std::cout << "Top of stack : " << memory[sp] << "\n";
+        }
+        running = false;
+        break;
+    }
+    case PSH:
+    {
+        UWORD src_mode = fetch();
+        WORD src = fetch();
+        memory[++sp] = get_value(static_cast<OperandType>(src_mode), src);
         break;
     }
     case POP:
+    {
+        UWORD dest_mode = fetch();
+        WORD value = memory[sp--]; // OR --sp?
+        if (dest_mode != NONE)
+        {
+            WORD dest = fetch();
+            set_value(static_cast<OperandType>(dest_mode), dest, value);
+        }
         break;
+    }
     case ADD:
     {
+        UWORD dest_mode = fetch();
+        WORD dest = fetch();
+        UWORD src_mode = fetch();
+        WORD src = fetch();
 
-        int sum = 0;
-        while (sp > -1)
-        {
-            sum += stack[sp--];
-        }
-        stack[++sp] = sum;
+        WORD dest_val = get_value(static_cast<OperandType>(dest_mode), dest);
+        WORD src_val = get_value(static_cast<OperandType>(src_mode), src);
+
+        WORD sum = dest_val + src_val;
+        set_value(static_cast<OperandType>(dest_mode), dest, sum);
+
         break;
     }
 
     case LOAD:
     {
-        int mode = fetch();
-        int dest = fetch();
-        int src = fetch();
-        registers[dest] = src;
+        UWORD dest_mode = fetch();
+        WORD dest = fetch();
+        UWORD src_mode = fetch();
+        WORD src = fetch();
+        WORD value = get_value(static_cast<OperandType>(src_mode), src);
+        set_value(static_cast<OperandType>(dest_mode), dest, value);
         break;
     }
     case OUT:
     {
-        // Mode 0: top of the stack
-        // Mode 1: from the registor
-        // Mode 2: Memory
-        // Mode 3: Immediate
-        int mode = fetch();
-        if (mode == 0)
+        UWORD src_mode = fetch();
+        WORD value;
+        if (src_mode == NONE)
         {
-            std::cout << stack[sp] << std::endl;
+            value = memory[sp];
         }
-        else if (mode == 1)
+        else
         {
-            std::cout << registers[fetch()] << std::endl;
+            WORD src = fetch();
+            value = get_value(static_cast<OperandType>(src_mode), src);
         }
+        std::cout << value << std::endl;
         break;
     }
     default:
+    {
+        std::cout << "UNKNOWN INSTRUCTION\n";
         break;
+    }
+    }
+}
+
+WORD get_value(OperandType mode, WORD operand)
+{
+    switch (mode)
+    {
+    case REGISTER:
+        return registers[operand];
+    case INDIRECT:
+        return operand;
+    case MEMORY:
+        return memory[operand];
+    default:
+        std::cerr << "Error: Invalid operand mode " << mode << std::endl;
+        running = false;
+        return 0;
+    }
+}
+
+void set_value(OperandType mode, WORD operand, WORD value)
+{
+    switch (mode)
+    {
+    case REGISTER:
+        registers[operand] = value;
+        break;
+    case MEMORY:
+        memory[operand] = value;
+        break;
+    default:
+        std::cerr << "Invalid destination mode" << std::endl;
+        running = false;
+        break;
+    }
+}
+
+void load_into_memory(const std::string &filename, WORD *memory)
+{
+    memory[MEMORY_SIZE] = {0}; // Clear memory
+    std::ifstream infile(filename, std::ios::binary);
+    if (!infile)
+    {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return;
+    }
+    ADDR ptr = -1; // A head pointer
+    UWORD __code_size = read_word_from_file(infile);
+    // std::cout << "Code Size: " << __code_size << std::endl;
+    for (ptr = CODE_START; ptr < __code_size; ++ptr)
+    {
+        memory[ptr] = read_word_from_file(infile);
+    }
+    UWORD __data_size = read_word_from_file(infile);
+    // std::cout << "Data Size: " << __data_size << std::endl;
+    for (ptr = DATA_START; ptr < __data_size; ++ptr)
+    {
+        memory[ptr] = read_word_from_file(infile);
     }
 }
