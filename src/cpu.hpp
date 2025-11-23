@@ -1,6 +1,9 @@
 #pragma once
 #include "types.hpp"
-#include "memory.h"
+#include "ram.hpp"
+
+UWORD ip = CODE_START;
+
 
 enum Registers : UWORD
 {
@@ -12,3 +15,6 @@ enum Registers : UWORD
 };
 
 WORD registers[REG_COUNT] = {0};
+
+FLAG ZERO = 0;
+FLAG CARRY = 0;

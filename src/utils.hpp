@@ -32,21 +32,21 @@ bool is_register(const std::string &s, const std::unordered_map<std::string, int
 
 bool is_memory(const std::string &s, const std::unordered_map<std::string, ADDR> &data_map)
 {
-    if(s.size() >= 2 && s.front() == '[' && s.back() == ']')
-    {        
+    if (s.size() >= 2 && s.front() == '[' && s.back() == ']')
+    {
         // Extract content between brackets
         std::string inner = s.substr(1, s.size() - 2);
-        
+
         auto it = data_map.find(inner);
         if (it != data_map.end())
         {
             return true;
         }
 
-        if(is_number(inner)){
+        if (is_number(inner) || is_register(inner, register_map))
+        { // The recipe for disaster
             return true;
         }
-
     }
     return false;
 }
@@ -56,3 +56,26 @@ bool is_immediate(const std::string &s)
     return is_number(s);
 }
 
+bool is_label(const std::string &s)
+{
+    return !s.empty() && s.back() == ':';
+}
+
+bool is_instruction(const std::string &s, std::unordered_map<std::string, InstrInfo> &instruction_map)
+{
+    auto it = instruction_map.find(s);
+    if (it != instruction_map.end())
+    {
+        return true;
+    }
+    return false;
+}
+bool is_procedure(const std::string &s, std::unordered_map<std::string, ADDR> &procedure_map)
+{
+    auto it = procedure_map.find(s);
+    if (it != procedure_map.end())
+    {
+        return true;
+    }
+    return false;
+}

@@ -4,7 +4,7 @@
 #include <fstream>
 #include "opcodes.hpp"
 #include "mapping.hpp"
-#include "memory.hpp"
+#include "ram.hpp"
 #include "cpu.hpp"
 
 int fetch();
@@ -22,8 +22,6 @@ std::vector<WORD> get_words_from_memory(ADDR start = 0, ADDR end = MEMORY_SIZE, 
     }
     return words;
 }
-
-UWORD ip = CODE_START;
 
 std::vector<WORD> program;
 
@@ -79,7 +77,7 @@ void eval(int instruction)
         if (debug)
         {
             std::cout << "HLT encountered\nFinal stack: [";
-            for (ADDR hsp = STACK_START+1; hsp <= sp; hsp++) // hsp: halt stack pointer
+            for (ADDR hsp = STACK_START + 1; hsp <= sp; hsp++) // hsp: halt stack pointer
             {
                 std::cout << memory[hsp];
                 if (hsp != sp)
@@ -109,10 +107,10 @@ void eval(int instruction)
     case POP:
     {
         UWORD dest_mode = fetch();
+        WORD dest = fetch();       // We have to waste one cycle
         WORD value = memory[sp--]; // OR --sp?
         if (dest_mode != NONE)
         {
-            WORD dest = fetch();
             set_value(static_cast<OperandType>(dest_mode), dest, value);
         }
         break;
@@ -146,22 +144,22 @@ void eval(int instruction)
     case OUT:
     {
         UWORD src_mode = fetch();
-        WORD value;
-        if (src_mode == NONE)
-        {
-            value = memory[sp];
-        }
-        else
-        {
-            WORD src = fetch();
-            value = get_value(static_cast<OperandType>(src_mode), src);
-        }
+        WORD src = fetch();
+        WORD value = get_value(static_cast<OperandType>(src_mode), src);
         std::cout << value << std::endl;
+        break;
+    }
+    case JMP:
+    {
+        UWORD mode = fetch();
+        WORD procedure = fetch();
+        ADDR addr = get_value(static_cast<OperandType>(mode), procedure);
+        ip = addr; // JMP!
         break;
     }
     default:
     {
-        std::cout << "UNKNOWN INSTRUCTION\n";
+        std::cout << "UNKNOWN INSTRUCTION: " << instruction << "\n";
         break;
     }
     }
@@ -171,12 +169,16 @@ WORD get_value(OperandType mode, WORD operand)
 {
     switch (mode)
     {
+    case NONE:
+        return memory[sp];
     case REGISTER:
         return registers[operand];
     case INDIRECT:
         return operand;
     case MEMORY:
         return memory[operand];
+    case PROCEDURE:
+        return operand;
     default:
         std::cerr << "Error: Invalid operand mode " << mode << std::endl;
         running = false;
@@ -219,7 +221,8 @@ void load_into_memory(const std::string &filename, WORD *memory)
     }
     UWORD __data_size = read_word_from_file(infile);
     // std::cout << "Data Size: " << __data_size << std::endl;
-    for (ptr = DATA_START; ptr < __data_size; ++ptr)
+    // std::cout << "Data start: " << DATA_START << std::endl;
+    for (ptr = DATA_START; ptr < DATA_START + __data_size; ++ptr)
     {
         memory[ptr] = read_word_from_file(infile);
     }

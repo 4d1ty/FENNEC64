@@ -10,6 +10,10 @@ enum InstructionSet : UWORD
     ADD,
     OUT,
     LOAD,
+    JMP,
+    JZ,
+    JGT,
+    JLZ,
     HLT
 };
 

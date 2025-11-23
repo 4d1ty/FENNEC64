@@ -30,6 +30,11 @@ std::unordered_map<std::string, InstrInfo> instr_map = {
                  2,
                  2,
              }},
+    {"JMP", {
+                 JMP,
+                 1,
+                 1,
+             }},
     {"HLT", {
                 HLT,
                 0,
@@ -44,3 +49,23 @@ std::unordered_map<std::string, int> register_map = {
     {"RC", RC},
     {"RD", RD},
 };
+
+ADDR ENTRY_POINT_ADDRESS = CODE_START; // Default entry point address (Might be overridden in the assembler)
+
+
+
+std::unordered_map<std::string, ADDR> procedure_map = {
+    {"MAIN", ENTRY_POINT_ADDRESS},
+};
+
+/*
+
+The program starts at the address defined by ENTRY_POINT_ADDRESS
+The procedure_map maps procedure names to their starting addresses in memory.
+
+In FENNEC Assembly, we can simple CALL PROC_NAME to jump to the procedure defined in procedure_map
+Or JMP PROC_NAME to unconditionally jump to that address.
+
+The program starts at the MAIN procedure by default, and its memory address is stored in ENTRY_POINT_ADDRESS.
+
+*/
