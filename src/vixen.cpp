@@ -8,6 +8,10 @@
 #include "vixen/cpu.hpp"
 
 #include <SFML/Graphics.hpp>
+#include "vixen/vconsole.hpp"
+
+#define VCONSOLE_FONT_PATH "FiraCode-Retina.ttf"
+
 
 int fetch();
 void eval(int);
@@ -29,7 +33,8 @@ std::vector<WORD> program;
 
 bool running = true;
 bool debug = false;
-
+sf::Font termFont(VCONSOLE_FONT_PATH);
+VirtualConsole console(800, 600, 16, termFont);
 int main(int argc, char const *argv[])
 {
     std::cout << "[VIXEN]" << std::endl;
@@ -48,23 +53,36 @@ int main(int argc, char const *argv[])
 
     load_into_memory(argv[1], memory);
     program = get_words_from_memory(CODE_START, CODE_END, memory);
+    if(program.size() == 0){
+        std::cerr << "No program loaded. Exiting.\n";
+        return 1;
+    }
+    sf::Font termFont;
+    if(!termFont.openFromFile(VCONSOLE_FONT_PATH)){
+        std::cerr << "Failed to load font for VirtualConsole\n";
+        return 1;
+    }
 
+    console.print("[VIXEN]\n\n");
+    // console.putChar('H');
+    // console.putChar('i');
+    // console.putChar('\n');
     sf::RenderWindow window(sf::VideoMode({800, 600}), "Vixen VM");
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
-    while (running)
+    while (window.isOpen())
     {
         while (const std::optional event = window.pollEvent())
         {
             if (event->is<sf::Event::Closed>())
-                window.close();
+            window.close();
         }
-
-        window.clear();
-        window.draw(shape);
+        
+        window.clear(sf::Color(28,28,28));
+        // window.clear(sf::Color::Black);
+        console.render(window);
         window.display();
         // Yay, we have a window now!
-        eval(fetch());
+        if (running)
+            eval(fetch());
     }
     return 0;
 }
@@ -93,22 +111,31 @@ void eval(int instruction)
         if (debug)
         {
             std::cout << "HLT encountered\nFinal stack: [";
+            console.print("HLT encountered\nFinal stack: [");
             for (ADDR hsp = STACK_START + 1; hsp <= sp; hsp++) // hsp: halt stack pointer
             {
                 std::cout << memory[hsp];
+                console.print(std::to_string(memory[hsp]));
                 if (hsp != sp)
                 {
                     std::cout << ", ";
+                    console.print(", ");
+                    
                 }
             }
             std::cout << "]\nRegisters: RA=" << registers[RA] << " RB=" << registers[RB]
                       << " RC=" << registers[RC] << " RD=" << registers[RD];
             std::cout << "\nIP=" << ip << std::endl;
+            char buffer[256];
+            sprintf(buffer, "]\nRegisters: RA=%d RB=%d RC=%d RD=%d\nIP=%d\n", registers[RA], registers[RB], registers[RC], registers[RD], ip);
+            console.print(buffer);
         }
         else
         {
             std::cout << "Yip! Program complete.\n";
+            console.print("Yip! Program complete.\n");
             std::cout << "Top of stack : " << memory[sp] << "\n";
+            console.print("Top of stack : " + std::to_string(memory[sp]) + "\n");
         }
         running = false;
         break;
@@ -163,6 +190,7 @@ void eval(int instruction)
         WORD src = fetch();
         WORD value = get_value(static_cast<OperandType>(src_mode), src);
         std::cout << value << std::endl;
+        console.print(std::to_string(value) + "\n");
         break;
     }
     case JMP:
@@ -173,9 +201,20 @@ void eval(int instruction)
         ip = addr; // JMP!
         break;
     }
+    case OUTC:
+    {
+        UWORD src_mode = fetch();
+        WORD src = fetch();
+        WORD value = get_value(static_cast<OperandType>(src_mode), src);
+        char c = static_cast<char>(value);
+        std::cout << c << std::flush;
+        console.putChar(c);
+        break;
+    }
     default:
     {
         std::cout << "UNKNOWN INSTRUCTION: " << instruction << "\n";
+        console.print("UNKNOWN INSTRUCTION: " + std::to_string(instruction) + "\n");
         break;
     }
     }

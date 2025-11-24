@@ -36,6 +36,11 @@ std::unordered_map<std::string, InstrInfo> instr_map = {
                  1,
                  1,
              }},
+    {"OUTC", {
+                 OUTC,
+                 1,
+                 1,
+             }},
     {"HLT", {
                 HLT,
                 0,

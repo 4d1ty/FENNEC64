@@ -12,6 +12,7 @@ enum InstructionSet : UWORD
     OUT,
     LOAD,
     JMP,
+    OUTC,
     JZ,
     JGT,
     JLZ,

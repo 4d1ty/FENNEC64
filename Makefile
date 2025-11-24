@@ -10,7 +10,7 @@ SFML_INCLUDE = $(SFML_DIR)/include
 SFML_LIB = $(SFML_DIR)/lib
 
 YIP_SRC = $(SRC_DIR)/yip.cpp
-VIXEN_SRC = $(SRC_DIR)/vixen.cpp
+VIXEN_SRC = $(SRC_DIR)/vixen.cpp $(SRC_DIR)/vconsole.cpp
 
 YIP_BIN = $(BUILD_DIR)/yip
 VIXEN_BIN = $(BUILD_DIR)/vixen

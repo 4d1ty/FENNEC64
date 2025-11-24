@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/src",
-                "${workspaceFolder}/src/include"
+                "${workspaceFolder}/src/include",
+                "${workspaceFolder}/src/sfml-3.0.2/include"
             ],
             "defines": [],
             "compilerPath": "C:/mingw64/bin/g++.exe",
