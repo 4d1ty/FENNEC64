@@ -6,6 +6,8 @@
 #include "mapping.hpp"
 #include "ram.hpp"
 #include "cpu.hpp"
+#include <SFML/Graphics.hpp>
+
 
 int fetch();
 void eval(int);
