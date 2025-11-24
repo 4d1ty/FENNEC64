@@ -1,5 +1,6 @@
-#pragma once
-#include "types.hpp"
+#ifndef VIXEN_MEMORY_HPP
+#define VIXEN_MEMORY_HPP
+#include "vixen/types.hpp"
 
 // #define MEMORY_SIZE 4096
 #define MEMORY_SIZE 32768
@@ -49,3 +50,5 @@ WORD read_word_from_file(std::ifstream &infile)
     infile.read(reinterpret_cast<char *>(&value), sizeof(WORD));
     return value;
 }
+
+#endif // VIXEN_MEMORY_HPP

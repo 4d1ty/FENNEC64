@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VIXEN_TYPES_HPP
+#define VIXEN_TYPES_HPP
 #include <cstdint>
 
 // Defining out base type
@@ -15,3 +16,5 @@ enum OperandType : UWORD
     MEMORY,
     PROCEDURE
 };
+
+#endif // VIXEN_TYPES_HPP

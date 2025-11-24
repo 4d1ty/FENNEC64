@@ -97,5 +97,15 @@
         "valarray": "cpp",
         "variant": "cpp"
     },
-    "C_Cpp.default.compilerPath": "g++.exe"
+    "C_Cpp.default.compilerPath": "g++.exe",
+    "terminal.integrated.profiles.windows": {
+        "Fennec Dev Shell": {
+            "path": "cmd.exe",
+            "args": [
+                "/k",
+                "${workspaceFolder}\\dev.bat"
+            ]
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Fennec Dev Shell"
 }

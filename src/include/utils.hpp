@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include "cpu.hpp"
 
 bool is_number(const std::string &s)
 {

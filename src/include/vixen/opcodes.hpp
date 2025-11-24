@@ -1,7 +1,8 @@
-#pragma once
+#ifndef VIXEN_OPCODES_HPP
+#define VIXEN_OPCODES_HPP
 #include <unordered_map>
-#include "cpu.hpp"
-#include "types.hpp"
+#include "vixen/cpu.hpp"
+#include "vixen/types.hpp"
 
 enum InstructionSet : UWORD
 {
@@ -29,3 +30,6 @@ enum Section
     TEXT,
     DATA,
 };
+
+
+#endif // VIXEN_OPCODES_HPP

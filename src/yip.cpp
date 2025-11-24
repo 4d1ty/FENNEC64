@@ -5,8 +5,9 @@
 #include <vector>
 #include <cstdint>
 #include <iomanip>
-#include "ram.hpp"
-#include "mapping.hpp"
+
+#include "vixen/memory.hpp"
+#include "yip/mapping.hpp"
 #include "utils.hpp"
 
 int main(int argc, char const *argv[])

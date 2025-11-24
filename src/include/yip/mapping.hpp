@@ -1,8 +1,9 @@
-#pragma once
+#ifndef VIXEN_MAPPING_HPP
+#define VIXEN_MAPPING_HPP
 #include <unordered_map>
 #include <string>
-#include "types.hpp"
-#include "opcodes.hpp"
+#include "vixen/types.hpp"
+#include "vixen/opcodes.hpp"
 
 std::unordered_map<std::string, InstrInfo> instr_map = {
     {"PSH", {
@@ -69,3 +70,5 @@ Or JMP PROC_NAME to unconditionally jump to that address.
 The program starts at the MAIN procedure by default, and its memory address is stored in ENTRY_POINT_ADDRESS.
 
 */
+
+#endif // VIXEN_MAPPING_HPP

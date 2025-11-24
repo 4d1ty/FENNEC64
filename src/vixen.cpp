@@ -2,12 +2,12 @@
 #include <vector>
 #include <cstdint>
 #include <fstream>
-#include "opcodes.hpp"
-#include "mapping.hpp"
-#include "ram.hpp"
-#include "cpu.hpp"
-#include <SFML/Graphics.hpp>
 
+#include "vixen/opcodes.hpp"
+#include "vixen/memory.hpp"
+#include "vixen/cpu.hpp"
+
+#include <SFML/Graphics.hpp>
 
 int fetch();
 void eval(int);
@@ -32,6 +32,7 @@ bool debug = false;
 
 int main(int argc, char const *argv[])
 {
+    std::cout << "[VIXEN]" << std::endl;
     if (argc < 2)
     {
         std::cerr << "Usage: vixen <code.bin>" << std::endl;
@@ -48,8 +49,21 @@ int main(int argc, char const *argv[])
     load_into_memory(argv[1], memory);
     program = get_words_from_memory(CODE_START, CODE_END, memory);
 
+    sf::RenderWindow window(sf::VideoMode({800, 600}), "Vixen VM");
+    sf::CircleShape shape(100.f);
+    shape.setFillColor(sf::Color::Green);
     while (running)
     {
+        while (const std::optional event = window.pollEvent())
+        {
+            if (event->is<sf::Event::Closed>())
+                window.close();
+        }
+
+        window.clear();
+        window.draw(shape);
+        window.display();
+        // Yay, we have a window now!
         eval(fetch());
     }
     return 0;
