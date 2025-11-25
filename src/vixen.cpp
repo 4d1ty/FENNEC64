@@ -12,7 +12,6 @@
 
 #define VCONSOLE_FONT_PATH "FiraCode-Retina.ttf"
 
-
 int fetch();
 void eval(int);
 void load_into_memory(const std::string &filename, WORD *memory);
@@ -53,12 +52,14 @@ int main(int argc, char const *argv[])
 
     load_into_memory(argv[1], memory);
     program = get_words_from_memory(CODE_START, CODE_END, memory);
-    if(program.size() == 0){
+    if (program.size() == 0)
+    {
         std::cerr << "No program loaded. Exiting.\n";
         return 1;
     }
     sf::Font termFont;
-    if(!termFont.openFromFile(VCONSOLE_FONT_PATH)){
+    if (!termFont.openFromFile(VCONSOLE_FONT_PATH))
+    {
         std::cerr << "Failed to load font for VirtualConsole\n";
         return 1;
     }
@@ -73,11 +74,11 @@ int main(int argc, char const *argv[])
         while (const std::optional event = window.pollEvent())
         {
             if (event->is<sf::Event::Closed>())
-            window.close();
+                window.close();
         }
-        
-        window.clear(sf::Color(28,28,28));
-        // window.clear(sf::Color::Black);
+
+        // window.clear(sf::Color(28,28,28));
+        window.clear(sf::Color::Black);
         console.render(window);
         window.display();
         // Yay, we have a window now!
@@ -120,7 +121,6 @@ void eval(int instruction)
                 {
                     std::cout << ", ";
                     console.print(", ");
-                    
                 }
             }
             std::cout << "]\nRegisters: RA=" << registers[RA] << " RB=" << registers[RB]
@@ -209,6 +209,72 @@ void eval(int instruction)
         char c = static_cast<char>(value);
         std::cout << c << std::flush;
         console.putChar(c);
+        break;
+    }
+    case DRAWPIX:
+    {
+        UWORD x_mode = fetch();
+        WORD x_operand = fetch();
+        UWORD y_mode = fetch();
+        WORD y_operand = fetch();
+        UWORD color_mode = fetch();
+        WORD color_operand = fetch();
+
+        WORD x = get_value(static_cast<OperandType>(x_mode), x_operand);
+        WORD y = get_value(static_cast<OperandType>(y_mode), y_operand);
+        WORD color = get_value(static_cast<OperandType>(color_mode), color_operand);
+        console.drawPixel(static_cast<int>(x), static_cast<int>(y), sf::Color(color));
+        break;
+    }
+
+    case CMP:
+    {
+        UWORD l_mode = fetch();
+        WORD l_operand = fetch();
+        UWORD r_mode = fetch();
+        WORD r_operand = fetch();
+        WORD l = get_value(static_cast<OperandType>(l_mode), l_operand);
+        WORD r = get_value(static_cast<OperandType>(r_mode), r_operand);
+        if (l == r)
+        {
+            CARRY = 0;
+            ZERO = 1;
+        }
+        else if (l < r)
+        {
+            CARRY = 1;
+            ZERO = 0;
+        }
+        else if (l > r)
+        {
+            CARRY = 0;
+            ZERO = 0;
+        }
+        break;
+    }
+    case JZ:
+    {
+        UWORD mode = fetch();
+        WORD procedure = fetch();
+        ADDR addr = get_value(static_cast<OperandType>(mode), procedure);
+        if (ZERO)
+        {
+            ip = addr; // JMP!
+        }
+        break;
+    }
+    case CALL:
+    {
+        memory[++sp] = ip + 1;
+        UWORD mode = fetch();
+        WORD procedure = fetch();
+        ADDR addr = get_value(static_cast<OperandType>(mode), procedure);
+        ip = addr; // JMP!
+        break;
+    }
+    case RET:{
+        ADDR lastIP = memory[sp--];
+        ip = ++lastIP;
         break;
     }
     default:

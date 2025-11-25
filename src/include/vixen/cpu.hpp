@@ -16,7 +16,7 @@ enum Registers : UWORD
 
 WORD registers[REG_COUNT] = {0};
 
-FLAG ZERO = 0;
-FLAG CARRY = 0;
+FLAG ZERO = 0; // ZF
+FLAG CARRY = 0; // CF
 
 #endif // VIXEN_CPU_HPP

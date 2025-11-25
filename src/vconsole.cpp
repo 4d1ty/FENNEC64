@@ -15,6 +15,14 @@ void VirtualConsole::clear()
     m_cursorY = 0;
 }
 
+void VirtualConsole::drawPixel(int x, int y, sf::Color color)
+{
+    if (x < 0 || x >= m_width || y < 0 || y >= m_height)
+        return; // Out of bounds
+    // Set pixel color in framebuffer
+    m_frameBuffer[y][x] = color;
+}
+
 void VirtualConsole::putChar(char c)
 {
     // if (c == '\n')
@@ -26,10 +34,10 @@ void VirtualConsole::putChar(char c)
     {
         m_cursorX = 0;
     }
-    if(c == '\t')
+    if (c == '\t')
     {
         int spacesToAdd = 4 - (m_cursorX % 4);
-        for(int i = 0; i < spacesToAdd; ++i)
+        for (int i = 0; i < spacesToAdd; ++i)
         {
             putChar(' ');
         }
@@ -86,6 +94,23 @@ void VirtualConsole::scrollUp()
 void VirtualConsole::render(sf::RenderWindow &window)
 {
 
+     // Draw the framebuffer pixels
+    for (int y = 0; y < m_height; ++y)
+    {
+        for (int x = 0; x < m_width; ++x)
+        {
+            sf::Color color = m_frameBuffer[y][x];
+            if (color.a != 0) // Only draw if pixel is set
+            {
+                sf::RectangleShape pixel(sf::Vector2f(1.f, 1.f));
+                pixel.setPosition(sf::Vector2f({static_cast<float>(x), static_cast<float>(y)}));
+                pixel.setSize(sf::Vector2f(static_cast<float>(pixelSize), static_cast<float>(pixelSize)));
+                pixel.setFillColor(color);
+                window.draw(pixel);
+            }
+        }
+    }
+
     sf::Time elapsed = m_clock.getElapsedTime();
     if (elapsed.asMilliseconds() >= m_cursorBlinkInterval)
     {
@@ -104,7 +129,7 @@ void VirtualConsole::render(sf::RenderWindow &window)
     }
 
     sf::RectangleShape cursor(
-        sf::Vector2f(static_cast<float>(m_charSize/2), static_cast<float>(m_charSize)));
+        sf::Vector2f(static_cast<float>(m_charSize / 2), static_cast<float>(m_charSize)));
     cursor.setFillColor(sf::Color(255, 255, 255, 80));
     cursor.setPosition(sf::Vector2f({static_cast<float>(m_cursorX * m_charSize), static_cast<float>(m_cursorY * m_charSize)}));
 
@@ -112,5 +137,7 @@ void VirtualConsole::render(sf::RenderWindow &window)
     {
         return; // Don't draw cursor in the off phase
     }
+
+   
     // window.draw(cursor);
 }

@@ -12,11 +12,12 @@ class VirtualConsole
     coordinates and rendering it onto an SFML RenderWindow.
     */
 public:
-    VirtualConsole(int width,int height,int charSize, sf::Font &font);
+    VirtualConsole(int width, int height, int charSize, sf::Font &font);
     void clear();
     void putChar(char c);
-    void print(const std::string &text, int x,int y);
+    void print(const std::string &text, int x, int y);
     void print(const std::string &text);
+    void drawPixel(int x, int y, sf::Color color);
     void render(sf::RenderWindow &window);
 
 private:
@@ -31,6 +32,9 @@ private:
     int m_cursorBlinkTimer = 0;
     int m_cursorBlinkInterval = 500; // milliseconds
     sf::Clock m_clock;
+    int pixelSize = 10;
+    std::vector<std::vector<sf::Color>> m_frameBuffer = std::vector<std::vector<sf::Color>>(600, std::vector<sf::Color>(800, sf::Color(0, 0, 0, 0)));
+
     void scrollUp();
 };
 

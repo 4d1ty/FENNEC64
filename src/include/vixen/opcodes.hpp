@@ -13,9 +13,15 @@ enum InstructionSet : UWORD
     LOAD,
     JMP,
     OUTC,
+    DRAWPIX,
+    CMP, // compare, if l == r, set CF to 0 ZF 1, else, if l < r CF 1, ZF 0, else l > r CF 0 ZF 0
     JZ,
     JGT,
     JLZ,
+    JE,
+    CALL,
+    RET,
+    SYS, // syscall
     HLT
 };
 

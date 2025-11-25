@@ -32,15 +32,40 @@ std::unordered_map<std::string, InstrInfo> instr_map = {
                  2,
              }},
     {"JMP", {
-                 JMP,
-                 1,
-                 1,
-             }},
+                JMP,
+                1,
+                1,
+            }},
+    {"JZ", {
+                JZ,
+                1,
+                1,
+            }},
+    {"CMP", {
+                CMP,
+                2,
+                2,
+            }},
     {"OUTC", {
                  OUTC,
                  1,
                  1,
              }},
+    {"DRAWPIX", {
+                    DRAWPIX,
+                    3,
+                    3,
+                }},
+    {"CALL", {
+                    CALL,
+                    1,
+                    1,
+                }},
+    {"RET", {
+                    RET,
+                    0,
+                    0,
+                }},
     {"HLT", {
                 HLT,
                 0,
@@ -57,8 +82,6 @@ std::unordered_map<std::string, int> register_map = {
 };
 
 ADDR ENTRY_POINT_ADDRESS = CODE_START; // Default entry point address (Might be overridden in the assembler)
-
-
 
 std::unordered_map<std::string, ADDR> procedure_map = {
     {"MAIN", ENTRY_POINT_ADDRESS},
