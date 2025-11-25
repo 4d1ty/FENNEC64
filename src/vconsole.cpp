@@ -79,7 +79,6 @@ void VirtualConsole::print(const std::string &text)
 
 void VirtualConsole::scrollUp()
 {
-    std::cout << "Scrolling up\n";
     // Shift all lines up by 1
     for (int i = 0; i < m_height - 1; i++)
         m_buffer[i] = m_buffer[i + 1];
